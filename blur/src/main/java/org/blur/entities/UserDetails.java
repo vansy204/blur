@@ -1,5 +1,6 @@
 package org.blur.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -24,9 +25,9 @@ public class UserDetails {
     @Column(name = "website_url")
     String websiteUrl;
     @Column(name = "following_count")
-    Integer followingCount;
+    Integer followingCount =0;
     @Column(name = "follower_count")
-    Integer followerCount;
+    Integer followerCount =0 ;
     @Column(name = "created_at")
     Timestamp createdAt;
     @Column(name = "updated_at")
@@ -34,6 +35,7 @@ public class UserDetails {
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
+            @JsonIgnore
     User user;
 
 }

@@ -8,7 +8,9 @@ import lombok.extern.log4j.Log4j2;
 import org.blur.dtos.UserDto;
 import org.blur.entities.Follower;
 import org.blur.entities.User;
+import org.blur.entities.UserDetails;
 import org.blur.exceptions.UserException;
+import org.blur.repositories.UserDetailsRepository;
 import org.blur.repositories.UserRepository;
 import org.blur.security.JwtTokenClaims;
 import org.blur.security.JwtTokenProvider;
@@ -18,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +36,7 @@ public class UserServicesImpl implements UserServices {
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-
+    private final UserDetailsRepository userDetailsRepository;
     @Override
     public User registerUser(User user) throws UserException {
         Optional<User> isUserNameExist = userRepository.findByUserName(user.getUserName());
@@ -54,6 +58,15 @@ public class UserServicesImpl implements UserServices {
         newUser.setRole(user.getRole());
         newUser.setPassword(passwordEncoder.encode(user.getPassword()));
 
+
+        UserDetails userDetails = new UserDetails();
+        userDetails.setUser(newUser);
+        userDetails.setCreatedAt(Timestamp.from(Instant.now()));
+        userDetails.setUpdatedAt(Timestamp.from(Instant.now()));
+
+
+        newUser.setUserDetails(userDetails);
+        userDetailsRepository.save(userDetails);
         return userRepository.save(newUser);
 
     }
@@ -73,7 +86,7 @@ public class UserServicesImpl implements UserServices {
         token = token.substring(7);
         JwtTokenClaims jwtTokenClaims = jwtTokenProvider.getClaimsFromToken(token);
         String userName = jwtTokenClaims.getUsername();
-        Optional<User> opt = userRepository.findByUserName(userName);
+        Optional<User> opt = userRepository.findByEmail(userName);
         if (opt.isPresent()) {
             return opt.get();
         }
@@ -94,13 +107,16 @@ public class UserServicesImpl implements UserServices {
         User followerUser = findUserById(followerId);
 
         Follower follower = new Follower();
-        follower.setFollower(reqUser);
-        follower.setFollowing(followerUser);
+        follower.setFollower(followerUser);
+        follower.setFollowing(reqUser);
         follower.setCreatedAt(LocalDateTime.now());
 
         reqUser.getFollowings().add(follower);
-        followerUser.getFollowers().add(follower);
 
+        reqUser.getUserDetails().setFollowingCount(reqUser.getUserDetails().getFollowingCount() + 1);
+        followerUser.getUserDetails().setFollowerCount(reqUser.getUserDetails().getFollowerCount() +1 );
+        reqUser.getUserDetails().setUpdatedAt(Timestamp.from(Instant.now()));
+        followerUser.getUserDetails().setUpdatedAt(Timestamp.from(Instant.now()));
         userRepository.save(reqUser);
         userRepository.save(followerUser);
 

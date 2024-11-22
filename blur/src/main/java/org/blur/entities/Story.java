@@ -27,9 +27,9 @@ public class Story {
     @Column(name = "content")
     String content;
     @Column(name = "like_count",nullable = false)
-    int likeCount;
+    int likeCount =0 ;
     @Column(name = "view_count", nullable = false)
-    int viewCount;
+    int viewCount =0;
     @Column(name = "media")
     String media;
     @Column(name = "expires_at", nullable = false)

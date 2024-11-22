@@ -31,9 +31,9 @@ public class Post {
     @Column(name = "image")
     String image;
     @Column(name = "comment_count")
-    Integer commentCount;
+    Integer commentCount =0;
     @Column(name = "like_count")
-    Integer likeCount;
+    Integer likeCount =0 ;
     @Column(name = "created_at",nullable = false)
     Timestamp createdAt;
     @Column(name = "updated_at", nullable = false)
