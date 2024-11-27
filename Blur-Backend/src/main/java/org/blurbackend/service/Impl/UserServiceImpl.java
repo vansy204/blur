@@ -7,8 +7,10 @@ import org.blurbackend.exception.UserException;
 import org.blurbackend.model.User;
 import org.blurbackend.repository.UserRepository;
 import org.blurbackend.service.UserService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,10 +18,31 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     @Override
     public User registerUser(User user) throws UserException {
-        return null;
+        Optional<User> isEmailExist = userRepository.findByEmail(user.getEmail());
+        if (isEmailExist.isPresent()) {
+            throw new UserException("Email already exists");
+        }
+        Optional<User> isUserNameExist = userRepository.findByUserName(user.getUserName());
+        if (isUserNameExist.isPresent()) {
+            throw new UserException("Username already exists");
+        }
+        if(user.getEmail() == null || user.getUserName() == null || user.getPassword() == null || user.getRole() == null || user.getFirstName() == null || user.getLastName() == null) {
+            throw new UserException("All fields are required");
+        }
+        User newUser = new User();
+        newUser.setEmail(user.getEmail());
+        newUser.setFirstName(user.getFirstName());
+        newUser.setLastName(user.getLastName());
+        newUser.setUserName(user.getUserName());
+        newUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        newUser.setCreatedAt(LocalDateTime.now());
+        newUser.setRole(user.getRole());
+
+         return userRepository.save(newUser);
     }
 
     @Override
