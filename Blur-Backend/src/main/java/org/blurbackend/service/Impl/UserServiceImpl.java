@@ -1,11 +1,15 @@
 package org.blurbackend.service.Impl;
 
 import lombok.RequiredArgsConstructor;
+import org.blurbackend.dto.UserDto;
 import org.blurbackend.enums.Role;
 import org.blurbackend.enums.UserStatus;
 import org.blurbackend.exception.UserException;
+import org.blurbackend.mapper.UserMapper;
 import org.blurbackend.model.User;
 import org.blurbackend.repository.UserRepository;
+import org.blurbackend.security.JwtTokenClaims;
+import org.blurbackend.security.JwtTokenProvider;
 import org.blurbackend.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +24,8 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UserMapper userMapper;
     @Override
     public User registerUser(User user) throws UserException {
         Optional<User> isEmailExist = userRepository.findByEmail(user.getEmail());
@@ -56,7 +62,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findUserProfile(String token) throws UserException {
-        return null;
+        token = token.substring(7);
+        JwtTokenClaims jwtTokenClaims = jwtTokenProvider.getClaimsFromToken(token);
+        String email = jwtTokenClaims.getUsername();
+        Optional<User> opt = userRepository.findByEmail(email);
+        if(opt.isPresent()) {
+            return opt.get();
+        }
+        throw new UserException("Invalid token...");
     }
 
     @Override
@@ -70,12 +83,32 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String followUser(Integer reqUserId, Integer followerId) throws UserException {
-        return "";
+        User reqUser = findUserById(reqUserId);
+        User followUser = findUserById(followerId);
+
+
+
+        reqUser.getFollowing().add(followUser);
+        followUser.getFollowers().add(reqUser);
+
+        userRepository.save(reqUser);
+        userRepository.save(followUser);
+        return "You are following " + followUser.getUserName();
+
     }
 
     @Override
     public String unFollowUser(Integer reqUserId, Integer followerId) throws UserException {
-        return "";
+        User reqUser = findUserById(reqUserId);
+        User followUser = findUserById(followerId);
+
+        reqUser.getFollowing().remove(followUser);
+        followUser.getFollowers().remove(reqUser);
+
+        userRepository.save(reqUser);
+        userRepository.save(followUser);
+        return "You are unfollow " + followUser.getUserName();
+
     }
 
     @Override
@@ -90,7 +123,52 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUserDetails(User updatedUser, User existingUser) throws UserException {
-        return null;
+        if(updatedUser.getUserName() != null) {
+            existingUser.setUserName(updatedUser.getUserName());
+        }
+        if(updatedUser.getEmail() != null) {
+            existingUser.setEmail(updatedUser.getEmail());
+        }
+        if(updatedUser.getPassword() != null) {
+            existingUser.setPassword(updatedUser.getPassword());
+        }
+        if(updatedUser.getRole() != null) {
+            existingUser.setRole(updatedUser.getRole());
+        }
+        if(updatedUser.getFirstName() != null) {
+            existingUser.setFirstName(updatedUser.getFirstName());
+        }
+        if(updatedUser.getLastName() != null) {
+            existingUser.setLastName(updatedUser.getLastName());
+        }
+        if(updatedUser.getUpdatedAt() != null) {
+            existingUser.setUpdatedAt(updatedUser.getUpdatedAt());
+        }
+        if(updatedUser.getCreatedAt() != null) {
+            existingUser.setCreatedAt(updatedUser.getCreatedAt());
+        }
+        if(updatedUser.getBio() != null) {
+            existingUser.setBio(updatedUser.getBio());
+        }
+        if(updatedUser.getGender() != null) {
+            existingUser.setGender(updatedUser.getGender());
+        }
+        if(updatedUser.getImage() != null) {
+            existingUser.setImage(updatedUser.getImage());
+        }
+        if(updatedUser.getStatus() != null) {
+            existingUser.setStatus(updatedUser.getStatus());
+        }
+        if(updatedUser.getMobile() != null) {
+            existingUser.setMobile(updatedUser.getMobile());
+        }
+        if(updatedUser.getWebsite() != null) {
+            existingUser.setWebsite(updatedUser.getWebsite());
+        }
+        if(updatedUser.getId().equals(existingUser.getId())) {
+            return userRepository.save(existingUser);
+        }
+        throw new UserException("You can't update this user");
     }
 
     @Override

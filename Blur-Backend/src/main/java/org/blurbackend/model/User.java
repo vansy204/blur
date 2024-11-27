@@ -41,18 +41,16 @@ public class User {
     LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     LocalDateTime updatedAt;
-    @Embedded
-    @ElementCollection
-    Set<UserDto> follower = new HashSet<>();
-    @Embedded
-    @ElementCollection
-    Set<UserDto> following = new HashSet<>();
+    @OneToMany
+    List<User> followers = new ArrayList<>();
+    @OneToMany
+    List<User> following = new ArrayList<>();
 
 
     @OneToMany(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private List<Story> stories = new ArrayList<>();
-    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    List<Post> savedPost;
+    @ManyToMany(fetch = FetchType.LAZY)
+    List<Post> savedPost = new ArrayList<>();
 
     @ManyToMany(cascade = {
             CascadeType.DETACH,
